@@ -81,13 +81,7 @@ function updateMicroservice(rows, microservice, gameId) {
   if (dbMicroservice && dbMicroservice.name === microservice.name) {
     // microservice exists, let's see if it should be updated
     if (dbMicroservice.instances === microservice.lastestDeployment.processes[0].quantity) {
-      // number of instances are the same, check if the RAM has changed
-      if (dbMicroservice.memory !== microservice.lastestDeployment.processes[0].memory) {
-        // this means that the user has completed the Falcon Mission.
-        microservices.updateMicroservice(microservice, dbMicroservice.id);
-        squads.getSquadByUserName(gameId, dbMicroservice.userName, dbMicroservice.environment)
-          .then(data => missionHandler.missionCompleted(missionHandler.MISSION.FALCON, dbMicroservice, data[0], gameId));
-      }
+
     } else if (microservice.lastestDeployment.processes[0].quantity === 2) {
       // user has scaled up to 2 instances, this mean the the user
       // completed the Scale Mission.
@@ -98,6 +92,20 @@ function updateMicroservice(rows, microservice, gameId) {
       // scaling has changed but don't gives points, just update
       microservices.updateMicroservice(microservice, dbMicroservice.id);
     }
+    // did it complete all the missions? If so we should add it to the Hall of getDeathstarForGame
+    missionHandler.getCompletedMissionsCount(gameId, dbMicroservice.id)
+      .then(data => {
+        if (data === Object.keys(missionHandler.MISSION).length) {
+          // we did it, add to hall of fame!
+          var creationTime = new Date(microservice.creationTime);
+          var lastModifiedTime = new Date(microservice.lastModifiedTime);
+          var minuteDifference = Math.ceil((lastModifiedTime.getTime() - creationTime.getTime()) / 60000);
+          console.log('YAAY! Finished in ' + minuteDifference + " minutes!");
+
+
+          missionHandler.addToHallOfFame()
+        }
+      })
   } else {
     // microservice does not exist in DB, let's insert it
     microservices.insertMicroservice(microservice, gameId)

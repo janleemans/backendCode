@@ -29,12 +29,6 @@ var MISSION = {
     },
     ITERATE: {
         name: "ITERATE"
-    },
-    FALCON: {
-        name: "FALCON"
-    },
-    HARD: {
-        name: "HARD"
     }
 };
 

@@ -10,9 +10,7 @@ MISSION = {
 	SCALE : { name: "SCALE", maxScore: 100 },
 	SHIELD : { name: "SHIELD", maxScore: 300},
 	DATABASE : { name: "DATABASE", maxScore: 500 },
-	ITERATE : { name: "ITERATE", maxScore: 500 },
-	FALCON : { name: "FALCON", maxScore: 0 },
-	HARD : { name: "HARD", maxScore: 1000 }
+	ITERATE : { name: "ITERATE", maxScore: 500 }
 };
 
 const missionCompleted = async (mission, microservice, squad, gameId) => {
@@ -46,17 +44,36 @@ const missionCompleted = async (mission, microservice, squad, gameId) => {
             case MISSION.DATABASE.name:
                 logHandler.insertLog(squad.name, microservice.name, scoreToGive, scoreToGive, logHandler.LOG_TYPE.DATABASE);
                 break;
-            case MISSION.FALCON.name:
-                logHandler.insertLog(squad.name, microservice.name, scoreToGive, scoreToGive, logHandler.LOG_TYPE.FALCON);
-                break;
-            case MISSION.HARD.name:
-                logHandler.insertLog(squad.name, microservice.name, scoreToGive, scoreToGive, logHandler.LOG_TYPE.HARD);
-                break;
             default:
         }
     } catch (err) {
         console.log(err);
     }
+};
+
+const getCompletedMissionsCount = (microserviceId, gameId) => {
+    var getMissionsCountPromise = new Promise(function (resolve, reject) {
+        var sqlstring = "SELECT COUNT(*) as count FROM MissionsMicroservices INNER JOIN Missions ON missionId=id where microserviceId = "
+				 + microserviceId +	" AND gameId = '" + gameId + "'";
+
+        pool.getConnection((err, connection) => {
+            if (err) {
+                console.log(`Error!`);
+                reject(`Error connecting to database: ${JSON.stringify(err)}`);
+            } else {
+                connection.query(sqlstring, (err, result, fields) => {
+                    connection.release();
+                    if (!err) {
+                        resolve(result[0].count);
+                    } else {
+                        console.log('Database error: ' + err.stack);
+                        reject(err);
+                    }
+                });
+            }
+        });
+    });
+    return getMissionsCountPromise;
 };
 
 const getMissionId = (missionName, gameId) => {
@@ -144,5 +161,6 @@ const insertMissionCompleted = (missionId, microserviceId, gameId, score) => {
 module.exports = {
 	missionCompleted : missionCompleted,
 	getMissionId : getMissionId,
+	getCompletedMissionsCount : getCompletedMissionsCount,
 	MISSION
 };
