@@ -25,42 +25,12 @@ module.exports = {
             .then(deathstarObj => {
               if (!(deathstarObj.state == deathstarObj.state.INITIALIZING)) {
                 pollDomains(game);
-                checkIfStateChanged(game)
               }
             });
         }
       });
   }
 };
-
-/**
- * Function that checks how many squads have completed the missions
- * relevant for the current state. If more than half of the squads
- * have completed, update to the next state!
- */
-function checkIfStateChanged(game) {
-  switch (game.state) {
-    case deathstar.STATE.FALCON:
-      updateStateIfNeeded(0.5, missionHandler.MISSION.FALCON.name, deathstar.STATE.FALCONCALLED, game);
-      break;
-    default:
-      break;
-  }
-}
-
-/**
- * Update the game state if needed.
- */
-function updateStateIfNeeded(minimumFractionCompleted, missionName, nextState, game) {
-  missionHandler.getMissionId(missionName, game.id)
-    .then(id => {
-      return missionHandler.getFractionCompleted(id, game.id);
-    }).then(fractionOfSquadsCompleted => {
-      if (fractionOfSquadsCompleted >= minimumFractionCompleted) {
-        deathstar.updateState(nextState, game.deathStarId);
-      }
-    });
-}
 
 /**
  * Queries all the domains that are belonging to the different squads.

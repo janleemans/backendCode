@@ -26,12 +26,10 @@ const missionCompleted = async (mission, microservice, squad, gameId) => {
         if (isCompletedByMicroservice)
             return;
 
-        let isCompletedBySquad = await isMissionCompletedBySquad(missionId, squad.id);
-        let fractionOfSquadsCompleted = await getFractionCompleted(missionId, gameId);
-        let scoreToGive = isCompletedBySquad ? 0 : (mission.maxScore * (1 - fractionOfSquadsCompleted));
+        let scoreToGive = mission.maxScore;
         console.log(`Yes. Inserting mission complete: ${missionId} ${microservice.id} ${gameId} ${scoreToGive}`)
         insertMissionCompleted(missionId, microservice.id, gameId, scoreToGive);
-        deathstar.updateHealth(gameId, scoreToGive);
+        deathstar.updateHealth(gameId, scoreToGive); // LINUSTODO: What to do?
         switch (mission.name) {
             case MISSION.DEPLOY.name:
                 logHandler.insertLog(squad.name, microservice.name, scoreToGive, scoreToGive, logHandler.LOG_TYPE.DEPLOY);
@@ -61,45 +59,16 @@ const missionCompleted = async (mission, microservice, squad, gameId) => {
     }
 };
 
-const updateMissionState = (missionId, missionName, newState) => {
-    let myPromise = new Promise(function (resolve, reject) {
-        let sqlString = `UPDATE Missions SET state = '${newState}'
-            WHERE gameId = ${missionId} AND name = '${missionName}'`;
-        debugHandler.insert('missionHandler', sqlString);
-        pool.getConnection((err, connection) => {
-            if (err) {
-                console.log(`Error!`);
-                reject(`Error connecting to database: ${JSON.stringify(err)}`);
-            } else {
-                //console.log(`Connection object: ${JSON.stringify(connection)}`);
-                connection.query(sqlString, (err, result, fields) => {
-                    connection.release();
-                    if (!err) {
-                        resolve(result);
-                    } else {
-                        console.log('Database error: ' + err.stack);
-                        reject(err);
-                    }
-                });
-            }
-        });
-    });
-    return myPromise;
-};
-
 const getMissionId = (missionName, gameId) => {
     var getMissionIdPromise = new Promise(function (resolve, reject) {
         var sqlstring = "SELECT id from Missions WHERE gameId = " + gameId + " " +
         		"AND name = '" + missionName + "'";
 
-        //let sqlString = `SELECT id from Missions WHERE gameId = ${gameId}
-        //    AND name = '${missionName}'`;
         pool.getConnection((err, connection) => {
             if (err) {
                 console.log(`Error!`);
                 reject(`Error connecting to database: ${JSON.stringify(err)}`);
             } else {
-                //console.log(`Connection object: ${JSON.stringify(connection)}`);
                 connection.query(sqlstring, (err, result, fields) => {
                     connection.release();
                     if (!err) {
@@ -124,68 +93,10 @@ const isMissionCompletedByMicroservice = (missionId, microserviceId) => {
                 console.log(`Error!`);
                 reject(`Error connecting to database: ${JSON.stringify(err)}`);
             } else {
-                //console.log(`Connection object: ${JSON.stringify(connection)}`);
                 connection.query(sqlString, (err, result, fields) => {
                     connection.release();
                     if (!err) {
                         resolve(result.length > 0);
-                    } else {
-                        console.log('Database error: ' + err.stack);
-                        reject(err);
-                    }
-                });
-            }
-        });
-    });
-    return myPromise;
-};
-
-const isMissionCompletedBySquad = (missionId, squadId) => {
-    let myPromise = new Promise(function (resolve, reject) {
-        let sqlString = `SELECT * FROM MissionsMicroservices mm
-            INNER JOIN SquadsMicroservices sm ON mm.microserviceId = sm.microserviceId
-            INNER JOIN Squads sq on sq.id = sm.squadId
-            WHERE squadId = ${squadId} AND missionId = ${missionId}`;
-        pool.getConnection((err, connection) => {
-            if (err) {
-                console.log(`Error!`);
-                reject(`Error connecting to database: ${JSON.stringify(err)}`);
-            } else {
-                //console.log(`Connection object: ${JSON.stringify(connection)}`);
-                connection.query(sqlString, (err, result, fields) => {
-                    connection.release();
-                    if (!err) {
-                        resolve(result.length > 0);
-                    } else {
-                        console.log('Database error: ' + err.stack);
-                        reject(err);
-                    }
-                });
-            }
-        });
-    });
-    return myPromise;
-};
-
-const getFractionCompleted = (missionId, gameId) => {
-    let myPromise = new Promise(function (resolve, reject) {
-        let sqlString = `SELECT (SELECT COUNT(DISTINCT squadId) FROM Squads sq
-            RIGHT JOIN SquadsMicroservices sm ON sq.id = sm.squadId
-            RIGHT JOIN MissionsMicroservices mm ON sm.microserviceId = mm.microserviceId
-            WHERE missionId = ${missionId} ) /
-            (SELECT COUNT(*) FROM Squads
-            WHERE gameId = ${gameId} ) as divisionResult`;
-        //debugHandler.insert('missionHandler', sqlString);
-        pool.getConnection((err, connection) => {
-            if (err) {
-                console.log(`Error!`);
-                reject(`Error connecting to database: ${JSON.stringify(err)}`);
-            } else {
-                //console.log(`Connection object: ${JSON.stringify(connection)}`);
-                connection.query(sqlString, (err, result, fields) => {
-                    connection.release();
-                    if (!err) {
-                        resolve(result[0].divisionResult);
                     } else {
                         console.log('Database error: ' + err.stack);
                         reject(err);
@@ -233,7 +144,5 @@ const insertMissionCompleted = (missionId, microserviceId, gameId, score) => {
 module.exports = {
 	missionCompleted : missionCompleted,
 	getMissionId : getMissionId,
-	updateMissionState : updateMissionState,
-	getFractionCompleted : getFractionCompleted,
 	MISSION
 };
