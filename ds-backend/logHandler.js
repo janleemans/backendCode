@@ -10,7 +10,8 @@ LOG_TYPE = {
 	DATABASE : "DATABASE",
 	FALCON : "FALCON",
 	HARD : "HARD",
-	FINISHED : "FINISHED"
+	FINISHED : "FINISHED",
+	HOF : "HOF"
 };
 
 const has = Object.prototype.hasOwnProperty;

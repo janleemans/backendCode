@@ -8,6 +8,7 @@ var squadsMicroservicesHandler = require('./squadsMicroservicesHandler');
 var missionHandler = require('./missionHandler');
 var deathstar = require('./deathstarHandler');
 var debugHandler = require('./debugHandler');
+var logHandler = require('./logHandler');
 
 var fs = require('fs');
 var myLogFileStream = fs.createWriteStream('engine-log.txt');
@@ -39,8 +40,8 @@ function pollDomains(game) {
   var JSONDomains = JSON.parse(game.gseDomains);
 
   JSONDomains.forEach(domain => {
-		var options = {
-			method: 'GET',
+    var options = {
+      method: 'GET',
       url: 'https://' + domain.host + '/paas/service/apaas/api/v1.1/apps/' + domain.name + '?outputLevel=verbose',
       headers: {
         'Authorization': domain.auth,
@@ -53,7 +54,7 @@ function pollDomains(game) {
       if (!error && response.statusCode == 200) {
         var info = JSON.parse(body);
 
-        updateMicroservicesForDomain(info, game.id);
+        updateMicroservicesForDomain(info, response.headers['date'], domain, game.id);
       }
     };
 
@@ -65,10 +66,10 @@ function pollDomains(game) {
 /**
  * Loops through all microservices found for a domain
  */
-function updateMicroservicesForDomain(JSONObject, gameId) {
+function updateMicroservicesForDomain(JSONObject, currentDate, domain, gameId) {
   JSONObject.applications.forEach(app => {
     microservices.getMicroservice(gameId, app.name, app.identityDomain, app.lastestDeployment.deploymentInfo.uploadedBy)
-      .then(rows => updateMicroservice(rows, app, gameId));
+      .then(rows => updateMicroservice(rows, app, gameId, currentDate, domain));
   });
 }
 
@@ -76,7 +77,7 @@ function updateMicroservicesForDomain(JSONObject, gameId) {
  * Analyzes a particular microservice in the domain and compares it with
  * the respective microservice in the database.
  */
-function updateMicroservice(rows, microservice, gameId) {
+function updateMicroservice(rows, microservice, gameId, currentDate, domain) {
   var dbMicroservice = rows[0];
   if (dbMicroservice && dbMicroservice.name === microservice.name) {
     // microservice exists, let's see if it should be updated
@@ -88,24 +89,35 @@ function updateMicroservice(rows, microservice, gameId) {
       microservices.updateMicroservice(microservice, dbMicroservice.id);
       squads.getSquadByUserName(gameId, dbMicroservice.userName, dbMicroservice.environment)
         .then(data => missionHandler.missionCompleted(missionHandler.MISSION.SCALE, dbMicroservice, data[0], gameId));
-    } else {
-      // scaling has changed but don't gives points, just update
-      microservices.updateMicroservice(microservice, dbMicroservice.id);
     }
+    microservices.updateMicroservice(microservice, dbMicroservice.id);
+
     // did it complete all the missions? If so we should add it to the Hall of getDeathstarForGame
+    var lastModifiedTime = new Date(microservice.lastModifiedTime);
+
     missionHandler.getCompletedMissionsCount(gameId, dbMicroservice.id)
       .then(data => {
         if (data === Object.keys(missionHandler.MISSION).length) {
           // we did it, add to hall of fame!
           var creationTime = new Date(microservice.creationTime);
-          var lastModifiedTime = new Date(microservice.lastModifiedTime);
+
           var minuteDifference = Math.ceil((lastModifiedTime.getTime() - creationTime.getTime()) / 60000);
           console.log('YAAY! Finished in ' + minuteDifference + " minutes!");
-
-
-          missionHandler.addToHallOfFame()
+          missionHandler.insertIntoHallOfFame(dbMicroservice.id, gameId, dbMicroservice.name, minuteDifference)
+            .then(data => {
+              if (data.affectedRows === 1) {
+                logHandler.insertLog('', microservice.name, 0, 0, logHandler.LOG_TYPE.HOF);
+              }
+            })
         }
       })
+
+    // if the service has been inactive for 45 minutes, let's stop it!
+    var nowDate = new Date(currentDate);
+    var differenceInMinutes = (nowDate.getTime() - lastModifiedTime.getTime()) / 60000;
+    if (dbMicroservice.status === 'RUNNING' && differenceInMinutes > 45) {
+      stopMicroservice(microservice.name, domain);
+    }
   } else {
     // microservice does not exist in DB, let's insert it
     microservices.insertMicroservice(microservice, gameId)
@@ -132,4 +144,21 @@ function updateMicroservice(rows, microservice, gameId) {
       });
 
   }
+}
+
+function stopMicroservice(name, domain) {
+  var options = {
+    method: 'POST',
+    url: 'https://' + domain.host + '/paas/service/apaas/api/v1.1/apps/' + domain.name + '/' + name + "/stop",
+    headers: {
+      'Authorization': domain.auth,
+      'X-ID-TENANT-NAME': domain.name
+    }
+  };
+
+  callback = function(error, response, body) {
+
+  };
+
+  request(options, callback);
 }

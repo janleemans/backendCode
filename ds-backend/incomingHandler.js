@@ -45,7 +45,7 @@ const incomingMinigun = async(params) => {
 	console.log('Count is: ' + count);
 	array.push(insert);
 
-	if (count == 9) {
+	if (insert.y == 9) {
 		debugHandler.insert('incomingHandler', 'Mission completed');
 
         try {
