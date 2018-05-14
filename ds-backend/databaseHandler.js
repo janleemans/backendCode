@@ -9,7 +9,7 @@ const dbUserName = "root";
 //const connectString = process.env.MYSQLCS_CONNECT_STRING
         //|| "127.0.0.1:3306/deathstar";
 
-const databaseUrl = 'localhost';
+const databaseUrl = `${JSON.stringify(process.env.OCCS_HOSTIPS)}`.split('public_ip: ')[1].split('"')[0];
 
 const connectString = `${databaseUrl}:3306`;
 
