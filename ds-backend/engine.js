@@ -78,6 +78,7 @@ function updateMicroservicesForDomain(JSONObject, currentDate, domain, gameId) {
  * the respective microservice in the database.
  */
 function updateMicroservice(rows, microservice, gameId, currentDate, domain) {
+
   var dbMicroservice = rows[0];
   if (dbMicroservice && dbMicroservice.name === microservice.name) {
     // microservice exists, let's see if it should be updated
@@ -97,6 +98,7 @@ function updateMicroservice(rows, microservice, gameId, currentDate, domain) {
 
     missionHandler.getCompletedMissionsCount(gameId, dbMicroservice.id)
       .then(data => {
+        console.log('FINSISHED!' + data + '=== ' + Object.keys(missionHandler.MISSION).length);
         if (data === Object.keys(missionHandler.MISSION).length) {
           // we did it, add to hall of fame!
           var creationTime = new Date(microservice.creationTime);
