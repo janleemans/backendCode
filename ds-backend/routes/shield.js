@@ -19,7 +19,10 @@ router.get('/' + xCoordinate + '/' + yCoordinate + '/:squadName/:microserviceNam
 				incomingHandler.incomingFire(req.params.squadName, req.params.microserviceName, missionHandler.MISSION.SHIELD);
 				res.send('Shield hit!');
 			} else {
-          if (req.headers['user-agent'] && !req.headers['user-agent'].includes('Apache')) {
+          if (req.headers['user-agent']
+          && !req.headers['user-agent'].includes('Apache')
+          && !req.headers['user-agent'].includes('ruby')
+          && !req.headers['user-agent'].includes('Go')) {
             // is coming from a non-server client
             res.send('Caller is not a fighter!');
           } else {
