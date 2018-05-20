@@ -17,7 +17,11 @@ router.get('/' + xCoordinate + '/:y/:squadName/:microserviceName', function(req,
 		incomingHandler.incomingMinigun(req.params);
 		res.send('Something got hit!');
 	} else {
-    if (req.headers['user-agent'] && !req.headers['user-agent'].includes('Apache')) {
+    if (req.headers['user-agent']
+    && !req.headers['user-agent'].includes('Apache')
+    && !req.headers['user-agent'].includes('ruby')
+    && !req.headers['user-agent'].includes('python')
+    && !req.headers['user-agent'].includes('Go')) {
       // is coming from a non-server client
       res.send('Caller is not a fighter!');
     } else {
