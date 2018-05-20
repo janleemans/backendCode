@@ -96,7 +96,7 @@ function updateMicroservice(rows, microservice, gameId, currentDate, domain) {
     // did it complete all the missions? If so we should add it to the Hall of getDeathstarForGame
     var lastModifiedTime = new Date(microservice.lastModifiedTime);
 
-    missionHandler.getCompletedMissionsCount(gameId, dbMicroservice.id)
+    missionHandler.getCompletedMissionsCount(dbMicroservice.id, gameId)
       .then(data => {
         console.log('FINSISHED!' + data + '=== ' + Object.keys(missionHandler.MISSION).length);
         if (data === Object.keys(missionHandler.MISSION).length) {
