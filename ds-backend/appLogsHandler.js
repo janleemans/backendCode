@@ -25,7 +25,7 @@ function getLogs(options) {
 
                           var options = {
                             method: 'GET',
-                            url: 'https://uscom-east-1.storage.oraclecloud.com/auth/v1.0',
+                            url: 'https://' + domain.datacentre + '.storage.oraclecloud.com/auth/v1.0',
                             headers: {
                               'X-Storage-User': 'Storage-' + domain.gseDomain + ':' + username,
                               'X-Storage-Pass': password
@@ -38,7 +38,7 @@ function getLogs(options) {
                               console.info(token);
                               var options = {
                                 method: 'GET',
-                                url: 'https://uscom-east-1.storage.oraclecloud.com/v1/Storage-' + domain.gseDomain +
+                                url: 'https://' + domain.datacentre + '.storage.oraclecloud.com/v1/Storage-' + domain.gseDomain +
                                   '/_apaas?prefix=' + appName + '&limit=' + (parseInt(index) + 1) + '&format=json',
                                 headers: {
                                   'X-Auth-Token': token
@@ -51,7 +51,7 @@ function getLogs(options) {
                                   var body = JSON.parse(body);
                                   console.info('Take number ' + (body.length - 1));
                                   var log = body[body.length - 1]
-                                  var urlString = 'https://uscom-east-1.storage.oraclecloud.com/v1/Storage-' + domain.gseDomain +
+                                  var urlString = 'https://' + domain.datacentre + '.storage.oraclecloud.com/v1/Storage-' + domain.gseDomain +
                                     '/_apaas/' + log.name;
                                   var options = {
                                     method: 'GET',
