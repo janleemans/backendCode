@@ -32,7 +32,30 @@ module.exports = {
         });
         return myPromise;
     },
+    getMicroserviceByName: (name) => {
+        let myPromise = new Promise(function (resolve, reject) {
+            let sqlString = `SELECT * FROM Microservices WHERE name = '${name}'`;
 
+            console.log(`SQL String: ${sqlString}`);
+            pool.getConnection((err, connection) => {
+                if (err) {
+                    console.log(`Error!`);
+                    reject(`Error connecting to database: ${JSON.stringify(err)}`);
+                } else {
+                    connection.query(sqlString, (err, result, fields) => {
+                        connection.release();
+                        if (!err) {
+                            resolve(result);
+                        } else {
+                            console.log('Database error: ' + err.stack);
+                            reject(err);
+                        }
+                    });
+                }
+            });
+        });
+        return myPromise;
+    },
     getMicroservices : gameId => {
         let myPromise = new Promise( (resolve, reject) => {
             let sqlString = `SELECT * FROM Microservices`;

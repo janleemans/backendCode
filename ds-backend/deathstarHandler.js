@@ -141,10 +141,14 @@ const insertGame = (deathStarId, timeLimit, domains, squads) => {
     return myPromise;
 };
 
-var insertMissions = function (gameId, timeLimit) {
+var insertMissions = function (gameId, timeLimit, enableDatabaseMission) {
     let promises = [];
     for (var index in MISSION) {
+
         var mission = MISSION[index];
+        if (!enableDatabaseMission && mission.name === 'DATABASE') {
+          continue;
+        }
         if (timeLimit < 30) {
             // don't abort missions for now
             mission.state = MISSION_STATE.CANCELLED;

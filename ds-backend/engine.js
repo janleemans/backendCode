@@ -54,7 +54,7 @@ function pollDomains(game) {
       if (!error && response.statusCode == 200) {
         var info = JSON.parse(body);
 
-        updateMicroservicesForDomain(info, response.headers['date'], domain, game.id);
+        updateMicroservicesForDomain(info, response.headers['date'], domain, game);
       }
     };
 
@@ -66,10 +66,10 @@ function pollDomains(game) {
 /**
  * Loops through all microservices found for a domain
  */
-function updateMicroservicesForDomain(JSONObject, currentDate, domain, gameId) {
+function updateMicroservicesForDomain(JSONObject, currentDate, domain, game) {
   JSONObject.applications.forEach(app => {
-    microservices.getMicroservice(gameId, app.name, app.identityDomain, app.lastestDeployment.deploymentInfo.uploadedBy)
-      .then(rows => updateMicroservice(rows, app, gameId, currentDate, domain));
+    microservices.getMicroservice(game.id, app.name, app.identityDomain, app.lastestDeployment.deploymentInfo.uploadedBy)
+      .then(rows => updateMicroservice(rows, app, game, currentDate, domain));
   });
 }
 
@@ -77,8 +77,8 @@ function updateMicroservicesForDomain(JSONObject, currentDate, domain, gameId) {
  * Analyzes a particular microservice in the domain and compares it with
  * the respective microservice in the database.
  */
-function updateMicroservice(rows, microservice, gameId, currentDate, domain) {
-
+function updateMicroservice(rows, microservice, game, currentDate, domain) {
+  var gameId = game.id;
   var dbMicroservice = rows[0];
   if (dbMicroservice && dbMicroservice.name === microservice.name) {
     // microservice exists, let's see if it should be updated
@@ -98,8 +98,10 @@ function updateMicroservice(rows, microservice, gameId, currentDate, domain) {
 
     missionHandler.getCompletedMissionsCount(dbMicroservice.id, gameId)
       .then(data => {
-        console.log('FINSISHED!' + data + '=== ' + Object.keys(missionHandler.MISSION).length);
-        if (data === Object.keys(missionHandler.MISSION).length) {
+        var maxMissions = Object.keys(missionHandler.MISSION).length;
+        var missionsToCount = game.state === deathstar.STATE.STARTED ? maxMissions - 1 : maxMissions;
+        console.log('FINSISHED?' + data + '=== ' + missionsToCount);
+        if (data === missionsToCount) {
           // we did it, add to hall of fame!
           var creationTime = new Date(microservice.creationTime);
 

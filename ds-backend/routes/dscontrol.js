@@ -17,7 +17,7 @@ router.post('/start', function(req, res, next) {
 	})
 	.then( id => {
 		gameId = id;
-		return deathstarHandler.insertMissions(gameId, bd.timeLimit);
+		return deathstarHandler.insertMissions(gameId, bd.timeLimit, bd.enableDatabaseMission);
 	})
 	.then( () => deathstarHandler.insertSquads(gameId, bd.squads))
 	.then( () => deathstarHandler.updateState(bd.enableDatabaseMission ? deathstarHandler.STATE.STARTED_DATABASE : deathstarHandler.STATE.STARTED, deathstarId))
