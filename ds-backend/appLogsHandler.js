@@ -49,6 +49,14 @@ function getLogs(options) {
 
                                 if (!error && response.statusCode == 200) {
                                   var body = JSON.parse(body);
+                                  if (!body || body.length < 1) {
+                                    var jsonObject = {
+                                      date: 'No log available',
+                                      logContent: 'No log available. Try again later.'
+                                    }
+                                    resolve(jsonObject);
+                                    return;
+                                  }
                                   console.info('Take number ' + (body.length - 1));
                                   var log = body[body.length - 1]
                                   var urlString = 'https://' + domain.datacentre + '.storage.oraclecloud.com/v1/Storage-' + domain.gseDomain +
